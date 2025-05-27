@@ -4,17 +4,24 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
-const cors_1 = __importDefault(require("cors"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const path_1 = __importDefault(require("path"));
 const vendorRoutes_1 = require("./routes/vendorRoutes");
+const cors_1 = require("./middleware/cors"); // Import the CORS middleware
 // Load environment variables
 dotenv_1.default.config();
 // Create Express server
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// Middleware
-app.use((0, cors_1.default)());
+// Use the dedicated CORS middleware FIRST
+app.use(cors_1.corsMiddleware);
+// Then use the cors package for more fine-grained control if needed (optional)
+// app.use(cors({
+//   origin: '*', // Or your specific frontend domain
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+//   credentials: true,
+//   allowedHeaders: ['Content-Type', 'Authorization']
+// }));
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // API Routes
