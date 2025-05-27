@@ -5,38 +5,45 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const dotenv_1 = __importDefault(require("dotenv"));
-const path_1 = __importDefault(require("path"));
 const vendorRoutes_1 = require("./routes/vendorRoutes");
-const cors_1 = require("./middleware/cors"); // Import the CORS middleware
 // Load environment variables
 dotenv_1.default.config();
 // Create Express server
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// Use the dedicated CORS middleware FIRST
-app.use(cors_1.corsMiddleware);
-// Then use the cors package for more fine-grained control if needed (optional)
-// app.use(cors({
-//   origin: '*', // Or your specific frontend domain
-//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-//   credentials: true,
-//   allowedHeaders: ['Content-Type', 'Authorization']
-// }));
+// CORS handling - specifically allow the frontend domain
+app.use((req, res, next) => {
+    const allowedOrigin = process.env.CORS_ORIGIN || 'https://vendor-registration-one.vercel.app';
+    // Set the specific origin or allow the requesting origin if it matches our frontend
+    const requestOrigin = req.headers.origin;
+    if (requestOrigin === 'https://vendor-registration-one.vercel.app') {
+        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+    }
+    else {
+        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    // If it's an OPTIONS preflight request, send 200 OK and end.
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next(); // Continue to other middlewares/routes for non-OPTIONS requests
+});
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/vendors', vendorRoutes_1.vendorRoutes);
-// Serve static files from the frontend build directory in production
-if (process.env.NODE_ENV === 'production') {
-    // Set static folder
-    const staticPath = path_1.default.join(__dirname, '../../frontend/dist');
-    app.use(express_1.default.static(staticPath));
-    // Any route that is not an API route will be handled by the frontend
-    app.get('*', (req, res) => {
-        res.sendFile(path_1.default.resolve(staticPath, 'index.html'));
+// Simple health check route
+app.get('/api/health', (req, res) => {
+    res.status(200).json({ status: 'ok', message: 'API is running' });
+});
+// Start server (for local development only)
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`Server running locally on port ${PORT}`);
     });
 }
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Export the app for Vercel serverless deployment
+exports.default = app;

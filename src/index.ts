@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import path from 'path';
 import { vendorRoutes } from './routes/vendorRoutes';
 
 // Load environment variables
@@ -40,18 +39,17 @@ app.use(express.urlencoded({ extended: true }));
 // API Routes
 app.use('/api/vendors', vendorRoutes);
 
-// Fallback for unhandled routes (optional, but good for debugging)
-app.use((req, res) => {
-  console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
-  res.status(404).send('Route not found');
+// Simple health check route
+app.get('/api/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'API is running' });
 });
 
-// Start server (for local development)
+// Start server (for local development only)
 if (process.env.NODE_ENV !== 'production') {
-    app.listen(PORT, () => {
-        console.log(`Server running locally on port ${PORT}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`Server running locally on port ${PORT}`);
+  });
 }
 
-// Export the app for Vercel
+// Export the app for Vercel serverless deployment
 export default app; 
