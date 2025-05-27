@@ -11,17 +11,9 @@ dotenv_1.default.config();
 // Create Express server
 const app = (0, express_1.default)();
 const PORT = process.env.PORT || 5000;
-// CORS handling - specifically allow the frontend domain
+// CORS handling - allow all origins for testing
 app.use((req, res, next) => {
-    const allowedOrigin = process.env.CORS_ORIGIN || 'https://vendor-registration-one.vercel.app';
-    // Set the specific origin or allow the requesting origin if it matches our frontend
-    const requestOrigin = req.headers.origin;
-    if (requestOrigin === 'https://vendor-registration-one.vercel.app') {
-        res.setHeader('Access-Control-Allow-Origin', requestOrigin);
-    }
-    else {
-        res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
-    }
+    res.setHeader('Access-Control-Allow-Origin', '*'); // Allow all origins
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
     res.setHeader('Access-Control-Allow-Credentials', 'true');
