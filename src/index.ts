@@ -10,17 +10,25 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS handling - read origin from environment variable
+// CORS handling - specifically allow the frontend domain
 app.use((req, res, next) => {
-  const allowedOrigin = process.env.CORS_ORIGIN || '*';
-  res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  const allowedOrigin = process.env.CORS_ORIGIN || 'https://vendor-registration-one.vercel.app';
+  
+  // Set the specific origin or allow the requesting origin if it matches our frontend
+  const requestOrigin = req.headers.origin;
+  if (requestOrigin === 'https://vendor-registration-one.vercel.app') {
+    res.setHeader('Access-Control-Allow-Origin', requestOrigin);
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
 
-  // If it's an OPTIONS preflight request, send 204 No Content and end.
+  // If it's an OPTIONS preflight request, send 200 OK and end.
   if (req.method === 'OPTIONS') {
-    return res.status(204).end();
+    return res.status(200).end();
   }
 
   next(); // Continue to other middlewares/routes for non-OPTIONS requests
