@@ -46,23 +46,6 @@ app.use((req, res) => {
   res.status(404).send('Route not found');
 });
 
-// Serve static files from the frontend build directory in production
-// This part is likely NOT what Vercel uses when deployed as a serverless function for /api routes
-// but doesn't hurt to keep for other potential uses or local dev.
-if (process.env.NODE_ENV === 'production') {
-  const staticPath = path.join(__dirname, '../../frontend/dist');
-  app.use(express.static(staticPath));
-  app.get('*', (req, res) => {
-    // Ensure API routes don't get overwritten by this catch-all
-    if (!req.originalUrl.startsWith('/api')) {
-      res.sendFile(path.resolve(staticPath, 'index.html'));
-    } else {
-      // If it was an API route that wasn't handled, it should have been caught by the 404 fallback above
-      res.status(404).send('API Route not found');
-    }
-  });
-}
-
 // Start server (for local development)
 if (process.env.NODE_ENV !== 'production') {
     app.listen(PORT, () => {
