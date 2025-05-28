@@ -196,17 +196,16 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
         const lastDot = originalName.lastIndexOf('.');
         let baseName = lastDot !== -1 ? originalName.substring(0, lastDot) : originalName;
         let fileExtension = lastDot !== -1 ? originalName.substring(lastDot + 1) : '';
-        // Sanitize base name
-        baseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_');
-        // Compose new filename with token id
-        const tokenId = data.referenceId || refId;
-        const newFilename = `${baseName}-${tokenId}${fileExtension ? '.' + fileExtension : ''}`;
+        // Sanitize base name and company name
+        const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const sanitizedCompanyName = (data.companyName || 'company').replace(/[^a-zA-Z0-9_-]/g, '_');
+        const sanitizedTokenId = (data.referenceId || 'TOKEN').replace(/[^a-zA-Z0-9_-]/g, '_');
+        // Compose new filename: companyName_originalFileName_tokenId.ext
+        const newFilename = `${sanitizedCompanyName}_${sanitizedBaseName}_${sanitizedTokenId}${fileExtension ? '.' + fileExtension : ''}`;
         mailOptions.attachments.push({
           filename: newFilename,
-          content: file.buffer,
-          contentType: file.mimetype
+          content: file.buffer
         });
-        console.log(`Added attachment: ${newFilename} (${file.size} bytes)`);
       });
     }
 
