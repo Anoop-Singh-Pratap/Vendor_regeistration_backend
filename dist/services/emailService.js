@@ -28,6 +28,89 @@ const createTransporter = () => {
         debug: process.env.NODE_ENV !== 'production' // Enable debug in development
     });
 };
+// Country code to name mapping (should match frontend)
+const countryCodeToName = {
+    in: 'India',
+    ae: 'United Arab Emirates',
+    au: 'Australia',
+    bd: 'Bangladesh',
+    bt: 'Bhutan',
+    br: 'Brazil',
+    ca: 'Canada',
+    cn: 'China',
+    co: 'Colombia',
+    cz: 'Czech Republic',
+    de: 'Germany',
+    dk: 'Denmark',
+    eg: 'Egypt',
+    es: 'Spain',
+    fi: 'Finland',
+    fr: 'France',
+    gb: 'United Kingdom',
+    gr: 'Greece',
+    hu: 'Hungary',
+    id: 'Indonesia',
+    ie: 'Ireland',
+    il: 'Israel',
+    it: 'Italy',
+    jp: 'Japan',
+    kr: 'South Korea',
+    lk: 'Sri Lanka',
+    mx: 'Mexico',
+    my: 'Malaysia',
+    ng: 'Nigeria',
+    nl: 'Netherlands',
+    no: 'Norway',
+    np: 'Nepal',
+    nz: 'New Zealand',
+    ph: 'Philippines',
+    pl: 'Poland',
+    pt: 'Portugal',
+    qa: 'Qatar',
+    ro: 'Romania',
+    ru: 'Russia',
+    sa: 'Saudi Arabia',
+    se: 'Sweden',
+    sg: 'Singapore',
+    th: 'Thailand',
+    tr: 'Turkey',
+    us: 'United States',
+    ve: 'Venezuela',
+    vn: 'Vietnam',
+    za: 'South Africa',
+    ch: 'Switzerland',
+    be: 'Belgium',
+    ar: 'Argentina',
+    cl: 'Chile',
+    pk: 'Pakistan',
+    ua: 'Ukraine',
+    at: 'Austria',
+    pe: 'Peru',
+    sk: 'Slovakia',
+    si: 'Slovenia',
+    hr: 'Croatia',
+    bg: 'Bulgaria',
+    ee: 'Estonia',
+    lt: 'Lithuania',
+    lv: 'Latvia',
+    rs: 'Serbia',
+    by: 'Belarus',
+    ge: 'Georgia',
+    is: 'Iceland',
+    lu: 'Luxembourg',
+    mt: 'Malta',
+    cy: 'Cyprus',
+    md: 'Moldova',
+    al: 'Albania',
+    mk: 'North Macedonia',
+    me: 'Montenegro',
+    ba: 'Bosnia and Herzegovina',
+    li: 'Liechtenstein',
+    sm: 'San Marino',
+    mc: 'Monaco',
+    va: 'Vatican City',
+    others: 'Others',
+};
 const sendVendorRegistrationEmail = async (data, files) => {
     try {
         console.log('Attempting to send vendor registration email...');
@@ -48,6 +131,14 @@ const sendVendorRegistrationEmail = async (data, files) => {
                 ? `₹${data.turnover} Crores`
                 : `$${data.turnover} Million`
             : 'Not provided';
+        // Determine country display name
+        let countryDisplay = '';
+        if (data.country === 'others') {
+            countryDisplay = data.customCountry || 'Others';
+        }
+        else {
+            countryDisplay = countryCodeToName[data.country] || data.country;
+        }
         // Create email HTML content
         const htmlContent = `
       <h2>New Vendor Registration - Token ID: ${refId}</h2>
@@ -63,8 +154,8 @@ const sendVendorRegistrationEmail = async (data, files) => {
       <p><strong>Company Name:</strong> ${data.companyName}</p>
       <p><strong>Firm Type:</strong> ${data.firmType}</p>
       <p><strong>Vendor Type:</strong> ${data.vendorType}</p>
-      <p><strong>Country:</strong> ${data.country}</p>
-      ${data.customCountry ? `<p><strong>Custom Country:</strong> ${data.customCountry}</p>` : ''}
+      <p><strong>Country:</strong> ${countryDisplay}</p>
+      ${data.customCountry && data.country === 'others' ? `<p><strong>Custom Country:</strong> ${data.customCountry}</p>` : ''}
       ${data.customCountryCode ? `<p><strong>Custom Country Code:</strong> ${data.customCountryCode}</p>` : ''}
       <p><strong>Website:</strong> ${data.website || 'Not provided'}</p>
       ${data.vendorType === 'domestic' ? `<p><strong>GST Number:</strong> ${data.gstNumber || 'Not provided'}</p>` : ''}
@@ -91,14 +182,21 @@ const sendVendorRegistrationEmail = async (data, files) => {
         if (files && files.length > 0) {
             console.log(`Adding ${files.length} files as attachments`);
             files.forEach((file, index) => {
-                const safeFilename = data.companyName.replace(/[^a-zA-Z0-9]/g, '_');
-                const fileExtension = file.originalname.split('.').pop() || 'unknown';
+                // Extract base name and extension from original filename
+                const originalName = file.originalname;
+                const lastDot = originalName.lastIndexOf('.');
+                let baseName = lastDot !== -1 ? originalName.substring(0, lastDot) : originalName;
+                let fileExtension = lastDot !== -1 ? originalName.substring(lastDot + 1) : '';
+                // Sanitize base name and company name
+                const sanitizedBaseName = baseName.replace(/[^a-zA-Z0-9_-]/g, '_');
+                const sanitizedCompanyName = (data.companyName || 'company').replace(/[^a-zA-Z0-9_-]/g, '_');
+                const sanitizedTokenId = (data.referenceId || 'TOKEN').replace(/[^a-zA-Z0-9_-]/g, '_');
+                // Compose new filename: companyName_originalFileName_tokenId.ext
+                const newFilename = `${sanitizedCompanyName}_${sanitizedBaseName}_${sanitizedTokenId}${fileExtension ? '.' + fileExtension : ''}`;
                 mailOptions.attachments.push({
-                    filename: `${safeFilename}_Document_${index + 1}.${fileExtension}`,
-                    content: file.buffer,
-                    contentType: file.mimetype
+                    filename: newFilename,
+                    content: file.buffer
                 });
-                console.log(`Added attachment: ${safeFilename}_Document_${index + 1}.${fileExtension} (${file.size} bytes)`);
             });
         }
         try {
