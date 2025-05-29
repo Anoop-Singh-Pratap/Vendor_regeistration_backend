@@ -202,6 +202,7 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
         const sanitizedTokenId = (data.referenceId || 'TOKEN').replace(/[^a-zA-Z0-9_-]/g, '_');
         // Compose new filename: companyName_originalFileName_tokenId.ext
         const newFilename = `${sanitizedCompanyName}_${sanitizedBaseName}_${sanitizedTokenId}${fileExtension ? '.' + fileExtension : ''}`;
+        console.log('Attachment filename:', newFilename);
         mailOptions.attachments.push({
           filename: newFilename,
           content: file.buffer
