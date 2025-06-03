@@ -9,7 +9,9 @@ export interface VendorFormData {
   customCountryCode?: string;
   website?: string;
   contactNo: string;
+  phone?: string;
   email: string;
+  address?: string;
   category: string;
   productDescription: string;
   majorClients?: string;

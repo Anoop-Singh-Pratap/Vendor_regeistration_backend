@@ -149,75 +149,13 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
       <p><strong>Registration Date:</strong> ${new Date().toLocaleString()}</p>
 
       <h3>Contact Person Details</h3>
-      <p><strong>Name:</strong> ${data.name}</p>🧩 Step 1: Capture Form Data in React
-Create a form and manage its state using React hooks like useState.
-
-jsx
-Copy
-Edit
-import React, { useState } from "react";
-
-const MyForm = () => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-  });
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Call function to save to Excel
-    exportToExcel([formData]);
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input name="name" onChange={handleChange} value={formData.name} placeholder="Name" />
-      <input name="email" onChange={handleChange} value={formData.email} placeholder="Email" />
-      <button type="submit">Submit</button>
-    </form>
-  );
-};
-
-export default MyForm;
-📥 Step 2: Export to Excel (Client-side)
-You can use the xlsx library to convert the form data into an Excel file and save it locally.
-
-Install the required library:
-bash
-Copy
-Edit
-npm install xlsx file-saver
-Add export function:
-js
-Copy
-Edit
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
-
-const exportToExcel = (data) => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "FormData");
-
-  const excelBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
-  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
-  saveAs(blob, "FormData.xlsx");
-};
-This will prompt the user to download the Excel file when they submit the form.
-
-✅ Optional: Auto-Save to Backend and Sync to Excel Server-Side
-If you want the Excel file to be automatically updated on a server or in cloud storage, you should:
-
-Send form data to a backend via fetch or axios.
-
-On the server, use Python (with openpyxl or pandas) or Node.js (with xlsx) to update an Excel file.
-
-Save the file on disk, Google Drive, or cloud storage.
-
+      <p><strong>Name:</strong> ${data.name}</p>
+      <p><strong>Email:</strong> ${data.email}</p>
+      <p><strong>Phone:</strong> ${data.contactNo || 'Not provided'}</p>
+      <p><strong>Company Name:</strong> ${data.companyName}</p>
+      <p><strong>Designation:</strong> ${data.designation || 'Not provided'}</p>
+      <p><strong>Country:</strong> ${countryDisplay}</p>
+      <p><strong>Address:</strong> ${data.address || 'Not provided'}</p>
       ${data.customCountryCode ? `<p><strong>Custom Country Code:</strong> ${data.customCountryCode}</p>` : ''}
       <p><strong>Website:</strong> ${data.website || 'Not provided'}</p>
       ${data.vendorType === 'domestic' ? `<p><strong>GST Number:</strong> ${data.gstNumber || 'Not provided'}</p>` : ''}
