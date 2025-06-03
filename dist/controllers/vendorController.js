@@ -2,13 +2,32 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.submitVendorRegistration = void 0;
 const emailService_1 = require("../services/emailService");
+const disposableDomains = require('disposable-email-domains');
+const validator = require('validator');
 // In-memory store for submissions when email sending fails
 const vendorSubmissionsStore = [];
 const submitVendorRegistration = async (req, res) => {
     try {
-        const vendorData = req.body;
+        let vendorData = req.body;
+        // Sanitize all string fields
+        Object.keys(vendorData).forEach((key) => {
+            if (typeof vendorData[key] === 'string') {
+                vendorData[key] = validator.escape(validator.trim(vendorData[key]));
+            }
+        });
         // Handle multiple files (array) instead of a single file
         const files = req.files;
+        // Disposable email check
+        const email = vendorData.email?.toLowerCase().trim();
+        if (email) {
+            const emailDomain = email.split('@')[1];
+            if (disposableDomains.includes(emailDomain)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Disposable email addresses are not allowed. Please use a valid business email.'
+                });
+            }
+        }
         // Basic validation
         if (!vendorData.name || !vendorData.designation || !vendorData.companyName ||
             !vendorData.firmType || !vendorData.vendorType || !vendorData.country || !vendorData.contactNo ||
