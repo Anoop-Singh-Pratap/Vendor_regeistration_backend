@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import { VendorFormData } from '../types/vendor';
 import { sendVendorRegistrationEmail } from '../services/emailService';
-import path from 'path';
-const disposableDomains = require('disposable-email-domains');
-const validator = require('validator');
 
 // In-memory store for submissions when email sending fails
 const vendorSubmissionsStore: Array<{
@@ -13,27 +10,9 @@ const vendorSubmissionsStore: Array<{
 
 export const submitVendorRegistration = async (req: Request, res: Response) => {
   try {
-    let vendorData: VendorFormData = req.body;
-    // Sanitize all string fields
-    Object.keys(vendorData).forEach((key) => {
-      if (typeof vendorData[key] === 'string') {
-        vendorData[key] = validator.escape(validator.trim(vendorData[key]));
-      }
-    });
+    const vendorData: VendorFormData = req.body;
     // Handle multiple files (array) instead of a single file
     const files = req.files as Express.Multer.File[] | undefined;
-
-    // Disposable email check
-    const email = vendorData.email?.toLowerCase().trim();
-    if (email) {
-      const emailDomain = email.split('@')[1];
-      if (disposableDomains.includes(emailDomain)) {
-        return res.status(400).json({
-          success: false,
-          message: 'Disposable email addresses are not allowed. Please use a valid business email.'
-        });
-      }
-    }
 
     // Basic validation
     if (!vendorData.name || !vendorData.designation || !vendorData.companyName ||
