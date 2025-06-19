@@ -145,22 +145,28 @@ const sendVendorRegistrationEmail = async (data, files) => {
       <p><strong>Registration Date:</strong> ${new Date().toLocaleString()}</p>
 
       <h3>Contact Person Details</h3>
-      <p><strong>Name:</strong> ${data.name}</p>
-      <p><strong>Email:</strong> ${data.email}</p>
-      <p><strong>Phone:</strong> ${data.contactNo || 'Not provided'}</p>
-      <p><strong>Company Name:</strong> ${data.companyName}</p>
+      <p><strong>Full Name:</strong> ${data.name}</p>
       <p><strong>Designation:</strong> ${data.designation || 'Not provided'}</p>
+      <p><strong>Email Address:</strong> ${data.email}</p>
+      <p><strong>Contact Number:</strong> ${data.contactNo || 'Not provided'}</p>
+
+      <h3>Company Information</h3>
+      <p><strong>Company/Firm Name:</strong> ${data.companyName}</p>
+      <p><strong>Type of Firm:</strong> ${data.firmType || 'Not provided'}</p>
+      <p><strong>Company Website:</strong> ${data.website || 'Not provided'}</p>
+      <p><strong>Vendor Type:</strong> ${data.vendorType === 'domestic' ? 'Domestic Vendor (India)' : 'Global Vendor'}</p>
       <p><strong>Country:</strong> ${countryDisplay}</p>
-      <p><strong>Address:</strong> ${data.address || 'Not provided'}</p>
       ${data.customCountryCode ? `<p><strong>Custom Country Code:</strong> ${data.customCountryCode}</p>` : ''}
-      <p><strong>Website:</strong> ${data.website || 'Not provided'}</p>
+      ${data.address ? `<p><strong>Address:</strong> ${data.address}</p>` : ''}
       ${data.vendorType === 'domestic' ? `<p><strong>GST Number:</strong> ${data.gstNumber || 'Not provided'}</p>` : ''}
-      <p><strong>Last Year Turnover:</strong> ${turnoverText}</p>
 
       <h3>Product/Service Information</h3>
-      <p><strong>Category:</strong> ${data.category}</p>
-      <p><strong>Product Description:</strong> ${data.productDescription}</p>
-      <p><strong>Major Clients:</strong> ${data.majorClients || 'Not provided'}</p>
+      <p><strong>Primary Category:</strong> ${data.category}</p>
+      <p><strong>Product/Service Description:</strong> ${data.productDescription}</p>
+      <p><strong>Major Clients or Projects:</strong> ${data.majorClients || 'Not provided'}</p>
+      <p><strong>Last Year Turnover:</strong> ${turnoverText}</p>
+
+      <h3>Supporting Documents</h3>
       <p><strong>Attachments:</strong> ${files && files.length > 0 ? `${files.length} file(s) attached` : 'None'}</p>
     `;
         // Get admin email from environment or use default
@@ -215,7 +221,9 @@ const sendVendorRegistrationEmail = async (data, files) => {
           <p><strong>Registration Summary:</strong></p>
           <ul>
             <li><strong>Company Name:</strong> ${data.companyName}</li>
-            <li><strong>Firm Type:</strong> ${data.firmType}</li>
+            <li><strong>Type of Firm:</strong> ${data.firmType || 'Not provided'}</li>
+            <li><strong>Vendor Type:</strong> ${data.vendorType === 'domestic' ? 'Domestic Vendor (India)' : 'Global Vendor'}</li>
+            <li><strong>Primary Category:</strong> ${data.category}</li>
             ${data.vendorType === 'domestic' && data.gstNumber ? `<li><strong>GST Number:</strong> ${data.gstNumber}</li>` : ''}
             <li><strong>Last Year Turnover:</strong> ${turnoverText}</li>
           </ul>
