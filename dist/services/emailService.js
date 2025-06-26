@@ -212,23 +212,156 @@ const sendVendorRegistrationEmail = async (data, files) => {
             const confirmationInfo = await transporter.sendMail({
                 from: `"Rashmi Metaliks Procurement" <${process.env.EMAIL_USER || 'procurement@rashmigroup.com'}>`,
                 to: data.email,
-                subject: `Your Vendor Registration - Token ID: ${refId}`,
+                subject: `Your Vendor Registration Received - Token ID: ${refId}`,
                 html: `
-          <h2>Thank you for your registration with Rashmi Metaliks</h2>
-          <p>Dear ${data.name},</p>
-          <p>We have received your vendor registration application. Your Token ID is: <strong>${refId}</strong></p>
-          <p>Our procurement team will review your details and contact you shortly.</p>
-          <p><strong>Registration Summary:</strong></p>
-          <ul>
-            <li><strong>Company Name:</strong> ${data.companyName}</li>
-            <li><strong>Type of Firm:</strong> ${data.firmType || 'Not provided'}</li>
-            <li><strong>Vendor Type:</strong> ${data.vendorType === 'domestic' ? 'Domestic Vendor (India)' : 'Global Vendor'}</li>
-            <li><strong>Primary Category:</strong> ${data.category}</li>
-            ${data.vendorType === 'domestic' && data.gstNumber ? `<li><strong>GST Number:</strong> ${data.gstNumber}</li>` : ''}
-            <li><strong>Last Year Turnover:</strong> ${turnoverText}</li>
-          </ul>
-          <p>Please note that we do not charge any registration amount. If you receive any payment requests, then that is a fraud and should be ignored.</p>
-          <p>Regards,<br>Procurement Team<br>Rashmi Metaliks Ltd.</p>
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Vendor Registration Confirmation</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 20px; background-color: #f4f4f4; }
+            .container { max-width: 650px; margin: 0 auto; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #c41e3a, #8b1538); color: white; padding: 30px; text-align: center; }
+            .header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+            .header p { margin: 10px 0 0 0; opacity: 0.9; font-size: 16px; }
+            .content { padding: 30px; }
+            .token-box { background: #f8f9fa; border: 2px solid #c41e3a; border-radius: 8px; padding: 20px; margin: 20px 0; text-align: center; }
+            .token-box h2 { margin: 0; color: #c41e3a; font-size: 24px; }
+            .token-box p { margin: 5px 0 0 0; color: #666; }
+            .section { margin: 25px 0; }
+            .section h3 { color: #c41e3a; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f0f0f0; padding-bottom: 8px; }
+            .summary-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+            .summary-item { background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 4px solid #c41e3a; }
+            .summary-item strong { color: #333; }
+            .next-steps { background: #e8f4fd; border: 2px solid #2196f3; border-radius: 8px; padding: 20px; margin: 25px 0; }
+            .next-steps h3 { color: #1976d2; margin-top: 0; }
+            .bidnemo-box { background: linear-gradient(135deg, #f8f9fa, #e3f2fd); border: 2px solid #2196f3; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .bidnemo-box h3 { color: #1976d2; margin-top: 0; }
+            .warning-box { background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0; }
+            .warning-box h3 { color: #b7560c; margin-top: 0; }
+            .footer { background: #2c3e50; color: white; padding: 25px; text-align: center; }
+            .footer p { margin: 5px 0; }
+            .contact-info { background: #ecf0f1; padding: 15px; border-radius: 6px; margin-top: 15px; }
+            @media (max-width: 600px) {
+              .container { margin: 10px; border-radius: 5px; }
+              .header, .content, .footer { padding: 20px; }
+              .header h1 { font-size: 24px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <!-- Header -->
+            <div class="header">
+              <h1>🏭 Rashmi Metaliks Ltd.</h1>
+              <p>Vendor Registration Confirmation</p>
+            </div>
+
+            <!-- Main Content -->
+            <div class="content">
+              <!-- Greeting -->
+              <h2 style="color: #2c3e50; margin-bottom: 20px;">Dear ${data.name},</h2>
+              
+              <p style="font-size: 16px; margin-bottom: 20px;">
+                Thank you for your interest in partnering with <strong>Rashmi Metaliks Ltd.</strong> 
+                We have successfully received your vendor registration application.
+              </p>
+
+              <!-- Token Box -->
+              <div class="token-box">
+                <h2>Your Token ID: ${refId}</h2>
+                <p>Please save this reference number for future communication</p>
+              </div>
+
+              <!-- Registration Summary -->
+              <div class="section">
+                <h3>📋 Registration Summary</h3>
+                <div class="summary-grid">
+                  <div class="summary-item">
+                    <strong>Company Name:</strong> ${data.companyName}
+                  </div>
+                  <div class="summary-item">
+                    <strong>Type of Firm:</strong> ${data.firmType || 'Not provided'}
+                  </div>
+                  <div class="summary-item">
+                    <strong>Vendor Type:</strong> ${data.vendorType === 'domestic' ? 'Domestic Vendor (India)' : 'Global Vendor'}
+                  </div>
+                  <div class="summary-item">
+                    <strong>Primary Category:</strong> ${data.category}
+                  </div>
+                  ${data.vendorType === 'domestic' && data.gstNumber ? `
+                  <div class="summary-item">
+                    <strong>GST Number:</strong> ${data.gstNumber}
+                  </div>` : ''}
+                  <div class="summary-item">
+                    <strong>Last Year Turnover:</strong> ${turnoverText}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Next Steps -->
+              <div class="next-steps">
+                <h3>🔍 What Happens Next?</h3>
+                <p><strong>1. Application Review:</strong> Our procurement team will carefully review your application and supporting documents.</p>
+                <p><strong>2. Evaluation Process:</strong> We will assess your company's capabilities, compliance, and alignment with our requirements.</p>
+                <p><strong>3. Contact & Communication:</strong> After reviewing your application, we will contact you as per our business needs and requirements.</p>
+              </div>
+
+              <!-- BidNemo Information -->
+              <div class="bidnemo-box">
+                <h3>🏆 BidNemo Bidding Portal Registration</h3>
+                <p>
+                  <strong>Important:</strong> Upon successful evaluation and as per our business requirements, 
+                  eligible vendors will be invited to register with our official bidding portal 
+                  <strong>"BidNemo"</strong> for participating in our tendering and bidding processes.
+                </p>
+                <p>
+                  This registration will allow you to:
+                </p>
+                <ul>
+                  <li>✅ Participate in live tenders and auctions</li>
+                  <li>✅ Access real-time bidding opportunities</li>
+                  <li>✅ Submit competitive proposals</li>
+                  <li>✅ Track your bid status and communications</li>
+                </ul>
+              </div>
+
+              <!-- Security Warning -->
+              <div class="warning-box">
+                <h3>⚠️ Important Security Notice</h3>
+                <p>
+                  <strong>FREE REGISTRATION:</strong> We do not charge any registration fees or amounts. 
+                  Our vendor registration process is completely FREE.
+                </p>
+                <p>
+                  <strong>Fraud Alert:</strong> If you receive any payment requests claiming to be from 
+                  Rashmi Metaliks for registration or processing fees, please ignore them immediately. 
+                  Such requests are fraudulent and should be reported.
+                </p>
+              </div>
+
+              <!-- Contact Information -->
+              <div class="contact-info">
+                <p><strong>For any queries, please contact our Procurement Team:</strong></p>
+                <p>📧 Email: procurement@rashmigroup.com</p>
+                <p>📞 Phone: [Contact Number]</p>
+                <p>🌐 Website: www.rashmigroup.com</p>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p><strong>Rashmi Metaliks Ltd.</strong></p>
+              <p>Procurement Department</p>
+              <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+                This is an automated message. Please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
         `
             });
             console.log('Confirmation email sent successfully:', confirmationInfo.messageId);
