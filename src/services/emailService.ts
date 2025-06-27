@@ -265,21 +265,21 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
         </head>
         <body>
           <div class="container">
-            <!-- Header -->
-            <div class="header">
-              <h1>🏭 Rashmi Metaliks Ltd.</h1>
-              <p>Vendor Registration Confirmation</p>
-            </div>
+                         <!-- Header -->
+             <div class="header">
+               <h1>🏭 Rashmi Group</h1>
+               <p>Vendor Registration Confirmation</p>
+             </div>
 
             <!-- Main Content -->
             <div class="content">
               <!-- Greeting -->
               <h2 style="color: #2c3e50; margin-bottom: 20px;">Dear ${data.name},</h2>
               
-              <p style="font-size: 16px; margin-bottom: 20px;">
-                Thank you for your interest in partnering with <strong>Rashmi Metaliks Ltd.</strong> 
-                We have successfully received your vendor registration application.
-              </p>
+                             <p style="font-size: 16px; margin-bottom: 20px;">
+                 Thank you for your interest in partnering as a Vendor with <strong>Rashmi Group.</strong> 
+                 We have successfully received your vendor registration profile.
+               </p>
 
               <!-- Token Box -->
               <div class="token-box">
@@ -313,32 +313,33 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
                 </div>
               </div>
 
-              <!-- Next Steps -->
-              <div class="next-steps">
-                <h3>🔍 What Happens Next?</h3>
-                <p><strong>1. Application Review:</strong> Our procurement team will carefully review your application and supporting documents.</p>
-                <p><strong>2. Evaluation Process:</strong> We will assess your company's capabilities, compliance, and alignment with our requirements.</p>
-                <p><strong>3. Contact & Communication:</strong> After reviewing your application, we will contact you as per our business needs and requirements.</p>
-              </div>
+                             <!-- Next Steps -->
+               <div class="next-steps">
+                 <h3>🔍 What Happens Next?</h3>
+                 <p>Our Central Purchase Team will carefully review your profile and supporting documents.</p>
+                 <p>We will assess your company's capabilities, compliance, and alignment with our needs.</p>
+                 <p>After reviewing your profile, we will contact you as per our business needs and requirements.</p>
+               </div>
 
-              <!-- BidNemo Information -->
-              <div class="bidnemo-box">
-                <h3>🏆 BidNemo Bidding Portal Registration</h3>
-                <p>
-                  <strong>Important:</strong> Upon successful evaluation and as per our business requirements, 
-                  eligible vendors will be invited to register with our official bidding portal 
-                  <strong>"BidNemo"</strong> for participating in our tendering and bidding processes.
-                </p>
-                <p>
-                  This registration will allow you to:
-                </p>
-                <ul>
-                  <li>✅ Participate in live tenders and auctions</li>
-                  <li>✅ Access real-time bidding opportunities</li>
-                  <li>✅ Submit competitive proposals</li>
-                  <li>✅ Track your bid status and communications</li>
-                </ul>
-              </div>
+                             <!-- BidNemo Information -->
+               <div class="bidnemo-box">
+                 <h3>🏆 BidNemo Bidding Portal Registration</h3>
+                 <p>
+                   <strong>Important:</strong> Upon successful evaluation and as per our business requirements, 
+                   we will invite you to participate with your pricing through our official bidding portal 
+                   <strong><a href="http://bidnemo.com/login" style="color: #1976d2; text-decoration: none;">BidNemo</a></strong> 
+                   or request for quotation through mail.
+                 </p>
+                 <p>
+                   This registration will allow you to:
+                 </p>
+                 <ul>
+                   <li>✅ Participate in live tenders and auctions</li>
+                   <li>✅ Access real-time bidding opportunities</li>
+                   <li>✅ Submit competitive proposals</li>
+                   <li>✅ Track your bid status and communications</li>
+                 </ul>
+               </div>
 
               <!-- Security Warning -->
               <div class="warning-box">
@@ -354,23 +355,22 @@ export const sendVendorRegistrationEmail = async (data: VendorFormData, files?: 
                 </p>
               </div>
 
-              <!-- Contact Information -->
-              <div class="contact-info">
-                <p><strong>For any queries, please contact our Procurement Team:</strong></p>
-                <p>📧 Email: procurement@rashmigroup.com</p>
-                <p>📞 Phone: [Contact Number]</p>
-                <p>🌐 Website: www.rashmigroup.com</p>
-              </div>
+                             <!-- Contact Information -->
+               <div class="contact-info">
+                 <p><strong>For Business related queries:</strong></p>
+                 <p>📧 Email: procurement@rashmigroup.com</p>
+                 <p>🌐 Website: www.rashmigroup.com</p>
+               </div>
             </div>
 
-            <!-- Footer -->
-            <div class="footer">
-              <p><strong>Rashmi Metaliks Ltd.</strong></p>
-              <p>Procurement Department</p>
-              <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
-                This is an automated message. Please do not reply to this email.
-              </p>
-            </div>
+                         <!-- Footer -->
+             <div class="footer">
+               <p><strong>Rashmi Group</strong></p>
+               <p>Procurement Department</p>
+               <p style="margin-top: 15px; font-size: 14px; opacity: 0.8;">
+                 This is an automated message. Please do not reply to this email.
+               </p>
+             </div>
           </div>
         </body>
         </html>
