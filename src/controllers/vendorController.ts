@@ -317,13 +317,18 @@ export const submitVendorRegistration = async (req: Request, res: Response) => {
 
     // Attempt to send email notification
     let emailSent = false;
+    let emailError = null;
     try {
-      emailSent = await sendVendorRegistrationEmail(vendorData, files);
+      emailSent = await sendVendorRegistrationEmail(vendorData, files, ip);
       if (emailSent) {
         console.log(`Email notifications sent successfully for ${submissionId}`);
+      } else {
+        console.warn(`Email sending failed due to security restrictions for ${submissionId}`);
+        emailError = 'Email sending restricted due to security policies';
       }
     } catch (error) {
       console.error(`Error sending email for ${submissionId}:`, error);
+      emailError = error instanceof Error ? error.message : 'Unknown email error';
       // Don't fail the submission if email fails
     }
 
@@ -334,6 +339,7 @@ export const submitVendorRegistration = async (req: Request, res: Response) => {
       referenceId: vendorData.referenceId,
       submissionId: submissionId,
       emailSent: emailSent,
+      emailError: emailError,
       timestamp: new Date().toISOString()
     });
 
