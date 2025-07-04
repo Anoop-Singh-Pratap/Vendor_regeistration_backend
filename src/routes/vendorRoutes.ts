@@ -5,6 +5,137 @@ import { vendorSubmissionRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
 
+// File type validation with magic number checking
+const validateFileContent = (buffer: Buffer, mimetype: string, filename: string): boolean => {
+  const magicNumbers: Record<string, number[][]> = {
+    'application/pdf': [[0x25, 0x50, 0x44, 0x46]], // %PDF
+    'image/jpeg': [[0xFF, 0xD8, 0xFF]], // JPEG
+    'image/png': [[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]], // PNG
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': [[0x50, 0x4B, 0x03, 0x04]], // DOCX (ZIP)
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [[0x50, 0x4B, 0x03, 0x04]], // XLSX (ZIP)
+    'application/vnd.ms-excel': [[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]], // XLS
+    'application/msword': [[0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1]], // DOC
+    'text/plain': [] // Text files don't have specific magic numbers
+  };
+
+  // Skip magic number check for text files
+  if (mimetype === 'text/plain') {
+    // For text files, check for suspicious patterns
+    const content = buffer.toString('utf8', 0, Math.min(buffer.length, 1024));
+    const suspiciousPatterns = [
+      /<script/i,
+      /javascript:/i,
+      /vbscript:/i,
+      /on\w+\s*=/i,
+      /eval\s*\(/i,
+      /document\./i,
+      /window\./i,
+      /ActiveX/i,
+      /Shell\./i,
+      /WScript\./i
+    ];
+    
+    for (const pattern of suspiciousPatterns) {
+      if (pattern.test(content)) {
+        console.log(`Suspicious pattern found in text file: ${filename}`);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  const expectedMagicNumbers = magicNumbers[mimetype];
+  if (!expectedMagicNumbers || expectedMagicNumbers.length === 0) {
+    return false;
+  }
+
+  // Check if any of the expected magic numbers match
+  for (const magicNumber of expectedMagicNumbers) {
+    if (buffer.length >= magicNumber.length) {
+      let matches = true;
+      for (let i = 0; i < magicNumber.length; i++) {
+        if (buffer[i] !== magicNumber[i]) {
+          matches = false;
+          break;
+        }
+      }
+      if (matches) {
+        return true;
+      }
+    }
+  }
+
+  console.log(`File header validation failed for ${filename}: expected ${expectedMagicNumbers}, got ${Array.from(buffer.slice(0, 8))}`);
+  return false;
+};
+
+// Additional security checks for uploaded files
+const performSecurityChecks = (file: Express.Multer.File): { isValid: boolean; error?: string } => {
+  try {
+    // Check for null bytes (potential directory traversal)
+    if (file.originalname.includes('\0')) {
+      return { isValid: false, error: 'Filename contains null bytes' };
+    }
+
+    // Check for path traversal attempts
+    const pathTraversalPatterns = [
+      /\.\./,
+      /\.\\/,
+      /\.\//, 
+      /\/\.\./,
+      /\\\.\./
+    ];
+
+    for (const pattern of pathTraversalPatterns) {
+      if (pattern.test(file.originalname)) {
+        return { isValid: false, error: 'Path traversal attempt detected' };
+      }
+    }
+
+    // Check for embedded executables in non-executable files
+    const executableSignatures = [
+      [0x4D, 0x5A], // MZ header (PE executables)
+      [0x7F, 0x45, 0x4C, 0x46], // ELF header
+      [0xCF, 0xFA, 0xED, 0xFE], // Mach-O
+      [0xFE, 0xED, 0xFA, 0xCF], // Mach-O
+      [0x21, 0x3C, 0x61, 0x72, 0x63, 0x68, 0x3E] // !<arch> (AR archive)
+    ];
+
+    for (const signature of executableSignatures) {
+      if (file.buffer.length >= signature.length) {
+        let matches = true;
+        for (let i = 0; i < signature.length; i++) {
+          if (file.buffer[i] !== signature[i]) {
+            matches = false;
+            break;
+          }
+        }
+        if (matches) {
+          return { isValid: false, error: 'Executable content detected' };
+        }
+      }
+    }
+
+    // Validate file content matches declared MIME type
+    if (!validateFileContent(file.buffer, file.mimetype, file.originalname)) {
+      return { isValid: false, error: 'File content does not match declared type' };
+    }
+
+    // Check for ZIP bombs (applicable to DOCX/XLSX which are ZIP files)
+    if (file.mimetype.includes('openxmlformats') && file.buffer.length > 0) {
+      const compressionRatio = file.size / file.buffer.length;
+      if (compressionRatio > 100) { // Suspiciously high compression ratio
+        return { isValid: false, error: 'Suspicious compression ratio detected' };
+      }
+    }
+
+    return { isValid: true };
+  } catch (error) {
+    console.error('Error during security checks:', error);
+    return { isValid: false, error: 'Security validation failed' };
+  }
+};
+
 // Enhanced multer configuration with better security
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -37,7 +168,7 @@ const upload = multer({
     }
     
     // Check file name for security (no executable extensions)
-    const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar', '.sh'];
+    const dangerousExtensions = ['.exe', '.bat', '.cmd', '.com', '.pif', '.scr', '.vbs', '.js', '.jar', '.sh', '.ps1', '.msi', '.deb', '.rpm'];
     const fileName = file.originalname.toLowerCase();
     const hasDangerousExtension = dangerousExtensions.some(ext => fileName.endsWith(ext));
     
@@ -50,11 +181,38 @@ const upload = multer({
     if (file.originalname.length > 255) {
       return cb(new Error('File name is too long. Maximum 255 characters allowed.'));
     }
+
+    // Check for control characters in filename
+    const controlCharPattern = /[\x00-\x1f\x7f-\x9f]/;
+    if (controlCharPattern.test(file.originalname)) {
+      return cb(new Error('Invalid characters in filename.'));
+    }
     
     console.log(`Accepted file: ${file.originalname}`);
     cb(null, true);
   }
 });
+
+// Enhanced file validation middleware
+const validateUploadedFiles = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const files = req.files as Express.Multer.File[];
+  
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const securityCheck = performSecurityChecks(file);
+      if (!securityCheck.isValid) {
+        console.log(`Security check failed for ${file.originalname}: ${securityCheck.error}`);
+        return res.status(400).json({
+          success: false,
+          message: `Security validation failed for file "${file.originalname}": ${securityCheck.error}`,
+          error: 'SECURITY_VALIDATION_FAILED'
+        });
+      }
+    }
+  }
+  
+  next();
+};
 
 // Error handling middleware for multer
 const handleMulterError = (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -124,6 +282,9 @@ router.post('/',
       handleMulterError(err, req, res, next);
     });
   },
+  
+  // Validate uploaded files with security checks
+  validateUploadedFiles,
   
   // Apply validation rules
   vendorValidationRules,

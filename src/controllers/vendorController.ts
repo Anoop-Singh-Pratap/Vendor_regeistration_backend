@@ -16,7 +16,7 @@ interface StoredSubmission {
 
 const vendorSubmissionsStore: StoredSubmission[] = [];
 
-// Validation rules for vendor data
+// Enhanced validation rules for vendor data
 export const vendorValidationRules = [
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be between 2-100 characters'),
   body('designation').trim().isLength({ min: 2, max: 100 }).withMessage('Designation must be between 2-100 characters'),
@@ -25,6 +25,28 @@ export const vendorValidationRules = [
   body('contactNo').trim().isLength({ min: 8, max: 20 }).withMessage('Contact number must be between 8-20 characters'),
   body('turnover').isFloat({ min: 0.1 }).withMessage('Turnover must be at least 0.1'),
   body('productDescription').trim().isLength({ min: 10, max: 1000 }).withMessage('Product description must be between 10-1000 characters'),
+  body('country').trim().isLength({ min: 2, max: 10 }).withMessage('Country must be specified'),
+  // Custom validation for "others" country selection
+  body('customCountry').custom((value, { req }) => {
+    if (req.body.country === 'others') {
+      if (!value || value.trim().length < 2 || value.trim().length > 100) {
+        throw new Error('Custom country name is required and must be between 2-100 characters when "Others" is selected');
+      }
+    }
+    return true;
+  }),
+  body('customCountryCode').custom((value, { req }) => {
+    if (req.body.country === 'others') {
+      if (!value || value.trim().length < 2 || value.trim().length > 5) {
+        throw new Error('Custom country code is required and must be between 2-5 characters when "Others" is selected');
+      }
+      // Validate country code format (alphabetic characters only)
+      if (!/^[A-Za-z]{2,5}$/.test(value.trim())) {
+        throw new Error('Custom country code must contain only alphabetic characters');
+      }
+    }
+    return true;
+  }),
 ];
 
 // Helper function to generate submission fingerprint
@@ -85,9 +107,9 @@ const isDuplicateSubmission = (vendorData: VendorFormData, ip: string, userAgent
   return { isDuplicate: false };
 };
 
-// Helper function to sanitize and validate data
+// Enhanced helper function to sanitize and validate data
 const sanitizeVendorData = (data: any): VendorFormData => {
-  return {
+  const sanitized: VendorFormData = {
     name: data.name?.trim() || '',
     designation: data.designation?.trim() || '',
     companyName: data.companyName?.trim() || '',
@@ -95,7 +117,7 @@ const sanitizeVendorData = (data: any): VendorFormData => {
     vendorType: data.vendorType?.trim() || '',
     country: data.country?.trim() || '',
     customCountry: data.customCountry?.trim(),
-    customCountryCode: data.customCountryCode?.trim(),
+    customCountryCode: data.customCountryCode?.trim()?.toUpperCase(), // Normalize to uppercase
     website: data.website?.trim(),
     contactNo: data.contactNo?.trim() || '',
     email: data.email?.toLowerCase().trim() || '',
@@ -108,6 +130,55 @@ const sanitizeVendorData = (data: any): VendorFormData => {
     terms: Boolean(data.terms),
     referenceId: data.referenceId?.trim()
   };
+
+  // Clear custom fields if not using "others" country
+  if (sanitized.country !== 'others') {
+    sanitized.customCountry = undefined;
+    sanitized.customCountryCode = undefined;
+  }
+
+  return sanitized;
+};
+
+// Enhanced country validation function
+const validateCountryData = (vendorData: VendorFormData): { isValid: boolean; error?: string } => {
+  // Define valid country codes
+  const validCountryCodes = [
+    'in', 'ae', 'au', 'bd', 'bt', 'br', 'ca', 'cn', 'co', 'cz', 'de', 'dk', 'eg', 'es', 
+    'fi', 'fr', 'gb', 'gr', 'hu', 'id', 'ie', 'il', 'it', 'jp', 'kr', 'lk', 'mx', 'my', 
+    'ng', 'nl', 'no', 'np', 'nz', 'ph', 'pl', 'pt', 'qa', 'ro', 'ru', 'sa', 'se', 'sg', 
+    'th', 'tr', 'us', 've', 'vn', 'za', 'ch', 'be', 'ar', 'cl', 'pk', 'ua', 'at', 'pe', 
+    'sk', 'si', 'hr', 'bg', 'ee', 'lt', 'lv', 'rs', 'by', 'ge', 'is', 'lu', 'mt', 'cy', 
+    'md', 'al', 'mk', 'me', 'ba', 'li', 'sm', 'mc', 'va', 'others'
+  ];
+
+  // Check if country code is valid
+  if (!validCountryCodes.includes(vendorData.country)) {
+    return { isValid: false, error: 'Invalid country code selected' };
+  }
+
+  // Special validation for "others" country
+  if (vendorData.country === 'others') {
+    if (!vendorData.customCountry || vendorData.customCountry.trim().length < 2) {
+      return { isValid: false, error: 'Custom country name is required when "Others" is selected' };
+    }
+
+    if (!vendorData.customCountryCode || vendorData.customCountryCode.trim().length < 2) {
+      return { isValid: false, error: 'Custom country code is required when "Others" is selected' };
+    }
+
+    // Validate custom country code format
+    if (!/^[A-Za-z]{2,5}$/.test(vendorData.customCountryCode)) {
+      return { isValid: false, error: 'Custom country code must contain only alphabetic characters (2-5 characters)' };
+    }
+
+    // Check if custom country code conflicts with existing ones
+    if (validCountryCodes.includes(vendorData.customCountryCode.toLowerCase())) {
+      return { isValid: false, error: 'Custom country code conflicts with existing country codes. Please use a different code.' };
+    }
+  }
+
+  return { isValid: true };
 };
 
 export const submitVendorRegistration = async (req: Request, res: Response) => {
@@ -143,6 +214,16 @@ export const submitVendorRegistration = async (req: Request, res: Response) => {
         message: `Missing required fields: ${missingFields.join(', ')}`,
         error: 'MISSING_FIELDS',
         missingFields
+      });
+    }
+
+    // Enhanced country validation
+    const countryValidation = validateCountryData(vendorData);
+    if (!countryValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        message: countryValidation.error,
+        error: 'INVALID_COUNTRY_DATA'
       });
     }
 
@@ -229,6 +310,8 @@ export const submitVendorRegistration = async (req: Request, res: Response) => {
       ip,
       email: vendorData.email,
       company: vendorData.companyName,
+      country: vendorData.country,
+      customCountry: vendorData.customCountry,
       filesCount: files?.length || 0
     });
 

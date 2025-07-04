@@ -12,6 +12,9 @@ interface SubmissionTracker {
 const submissionTracker = new Map<string, SubmissionTracker>();
 const emailTracker = new Map<string, SubmissionTracker>();
 
+// Maximum number of entries to prevent memory exhaustion
+const MAX_TRACKER_ENTRIES = 10000;
+
 // Global rate limiter for all API endpoints
 export const globalRateLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -32,6 +35,26 @@ export const globalRateLimiter = rateLimit({
   }
 });
 
+// Helper function to prevent memory exhaustion
+const enforceTrackerLimits = () => {
+  // If we exceed max entries, remove oldest entries
+  if (submissionTracker.size > MAX_TRACKER_ENTRIES) {
+    const entries = Array.from(submissionTracker.entries());
+    entries.sort((a, b) => a[1].lastSubmission - b[1].lastSubmission);
+    const toRemove = entries.slice(0, Math.floor(MAX_TRACKER_ENTRIES * 0.2)); // Remove 20% of entries
+    toRemove.forEach(([ip]) => submissionTracker.delete(ip));
+    console.log(`Enforced IP tracker limit: removed ${toRemove.length} old entries`);
+  }
+
+  if (emailTracker.size > MAX_TRACKER_ENTRIES) {
+    const entries = Array.from(emailTracker.entries());
+    entries.sort((a, b) => a[1].lastSubmission - b[1].lastSubmission);
+    const toRemove = entries.slice(0, Math.floor(MAX_TRACKER_ENTRIES * 0.2)); // Remove 20% of entries
+    toRemove.forEach(([email]) => emailTracker.delete(email));
+    console.log(`Enforced email tracker limit: removed ${toRemove.length} old entries`);
+  }
+};
+
 // Custom rate limiter specifically for vendor submissions
 export const vendorSubmissionRateLimiter = (req: Request, res: Response, next: NextFunction) => {
   const ip = req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'] as string || 'unknown';
@@ -48,6 +71,9 @@ export const vendorSubmissionRateLimiter = (req: Request, res: Response, next: N
   console.log(`Rate limit check for IP: ${ip}, Email: ${email}`);
 
   try {
+    // Enforce memory limits before processing
+    enforceTrackerLimits();
+
     // Check IP-based rate limiting
     const ipTracker = submissionTracker.get(ip);
     if (ipTracker) {
@@ -134,7 +160,7 @@ export const vendorSubmissionRateLimiter = (req: Request, res: Response, next: N
   }
 };
 
-// Cleanup function to remove old entries
+// Improved cleanup function to remove old entries
 export const cleanupTrackers = () => {
   const now = Date.now();
   const IP_WINDOW = 60 * 60 * 1000;
@@ -142,9 +168,13 @@ export const cleanupTrackers = () => {
   let cleanedIps = 0;
   let cleanedEmails = 0;
 
-  // Cleanup IP tracker
+  // Cleanup IP tracker with improved logic
   for (const [ip, tracker] of submissionTracker.entries()) {
-    if (now - tracker.firstSubmission > IP_WINDOW && (!tracker.blockedUntil || now > tracker.blockedUntil)) {
+    // Remove if window expired AND (no block or block expired)
+    const windowExpired = now - tracker.firstSubmission > IP_WINDOW;
+    const blockExpired = !tracker.blockedUntil || now > tracker.blockedUntil;
+    
+    if (windowExpired && blockExpired) {
       submissionTracker.delete(ip);
       cleanedIps++;
     }
@@ -161,6 +191,9 @@ export const cleanupTrackers = () => {
   if (cleanedIps > 0 || cleanedEmails > 0) {
     console.log(`Cleanup completed: ${cleanedIps} IPs, ${cleanedEmails} emails removed`);
   }
+  
+  // Log current tracker sizes for monitoring
+  console.log(`Current tracker sizes: IP=${submissionTracker.size}, Email=${emailTracker.size}`);
 };
 
 // Get current tracker status (for debugging)
@@ -180,8 +213,8 @@ export const getTrackerStatus = () => {
   };
 };
 
-// Run cleanup every 10 minutes
-setInterval(cleanupTrackers, 10 * 60 * 1000);
+// Run cleanup more frequently to prevent memory buildup
+setInterval(cleanupTrackers, 5 * 60 * 1000); // Every 5 minutes instead of 10
 
 // Export tracker maps if needed for testing
 export { submissionTracker, emailTracker }; 
