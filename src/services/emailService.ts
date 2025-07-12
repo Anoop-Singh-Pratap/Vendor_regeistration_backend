@@ -21,8 +21,14 @@ const createTransporter = () => {
       pass: process.env.EMAIL_PASS || process.env.VERCEL_EMAIL_PASS || 'your-default-password' // Use environment variables
     },
     requireTLS: true, // Ensure TLS is used
+    connectionTimeout: Number(process.env.EMAIL_CONNECTION_TIMEOUT || 10000), // 10 seconds
+    greetingTimeout: Number(process.env.EMAIL_TIMEOUT || 30000), // 30 seconds
+    socketTimeout: Number(process.env.EMAIL_TIMEOUT || 30000), // 30 seconds
     logger: process.env.NODE_ENV !== 'production', // Enable logging in development
-    debug: process.env.NODE_ENV !== 'production' // Enable debug in development
+    debug: process.env.NODE_ENV !== 'production', // Enable debug in development
+    pool: false, // Use dedicated connection per email
+    maxConnections: 1, // Limit concurrent connections
+    maxMessages: 1 // Send one message per connection
   });
 };
 
