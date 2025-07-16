@@ -12,13 +12,20 @@ const createTransporter = () => {
     requireTLS: true
   });
 
+  const emailUser = process.env.EMAIL_USER || 'procurement@rashmigroup.com';
+  const emailPass = process.env.EMAIL_PASS || process.env.VERCEL_EMAIL_PASS;
+
+  if (!emailPass) {
+    console.error("FATAL: EMAIL_PASS environment variable not set. Emails will fail to send.");
+  }
+
   return nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.office365.com', // Default to Microsoft's SMTP server
     port: Number(process.env.EMAIL_PORT || 587),
     secure: process.env.EMAIL_SECURE === 'true', // Should be false for port 587 with STARTTLS
     auth: {
-      user: process.env.EMAIL_USER || 'procurement@rashmigroup.com', // Default sender email
-      pass: process.env.EMAIL_PASS || process.env.VERCEL_EMAIL_PASS || 'your-default-password' // Use environment variables
+      user: emailUser, // Default sender email
+      pass: emailPass // Use environment variables
     },
     requireTLS: true, // Ensure TLS is used
     logger: process.env.NODE_ENV !== 'production', // Enable logging in development
