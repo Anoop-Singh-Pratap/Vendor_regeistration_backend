@@ -6,6 +6,7 @@ interface SubmissionTracker {
   firstSubmission: number;
   lastSubmission: number;
   blockedUntil?: number;
+  isBlocked?: boolean;
 }
 
 // In-memory store for tracking submissions by IP and email
